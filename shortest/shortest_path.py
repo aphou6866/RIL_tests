@@ -7,7 +7,7 @@ from random import randint, seed
 def create_random_path( n, m, k, positive, shortest):
     print(shortest)
     seed(10)
-    edges= []
+    
     if shortest== True:
         mx= 1000000
     elif positive==True:
@@ -46,17 +46,24 @@ def create_random_path( n, m, k, positive, shortest):
         c= randint(1, 100)
         graph[p][q]= c
     
-    for i in range(n):
-        for j in range(n):
-            dist= graph[i][j]
-            if dist!=mx:
-                edges.append( {'src':i, 'dst':j, 'weight':dist} )
+    edges= get_edges(graph, mx)
         
     for line in graph:
         print(line)
     #for e in edges:
         #print(e)
     return (graph, edges, mx)
+
+
+def get_edges( graph, mx):
+    n= len(graph)
+    edges= []
+    for i in range(n):
+        for j in range(n):
+            dist= graph[i][j]
+            if dist!=mx:
+                edges.append( {'src':i, 'dst':j, 'weight':dist} )
+    return edges
 
 
 def algo_Dijkstra( graph, src, mx):
