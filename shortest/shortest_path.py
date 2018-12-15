@@ -176,7 +176,7 @@ if __name__ == "__main__":
         shortest= True
     else:
         shortest= False
-    (graph, edges, mx) = create_random_path( n, m, k,True, shortest)
+    (graph, edges, mx) = create_random_path( n, m, k,False, shortest)
     print("mx:",mx)
     #print("\n------------Dijkstra Algorithm------------------\n")
     #algo_Dijkstra(graph, 0, mx  )
