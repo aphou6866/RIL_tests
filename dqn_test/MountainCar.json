@@ -1,0 +1,24 @@
+{   "DQN":{
+            "n_actions": 3,
+            "n_features": 2,
+            "learning_rate": 0.01,
+            "reward_decay":0.9,
+            "e_greedy":0.9,
+            "replace_target_iter":100,
+            "memory_size":10000,
+            "batch_size":64,
+            "e_greedy_increment":0.00005,
+            "output_graph":false,
+            "layers":1,
+            "hiddens":20,
+            "prioritized":true,
+            "double_q":false,
+            "dueling":true
+    },
+    "environment":{
+        "name":"MountainCar-v0",
+        "reward_scale":1.0
+    }
+}
+
+

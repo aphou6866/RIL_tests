@@ -1,0 +1,24 @@
+{   "DQN":{
+            "n_actions": 25,
+            "n_features": 3,
+            "learning_rate": 0.01,
+            "reward_decay":0.9,
+            "e_greedy":0.9,
+            "replace_target_iter":100,
+            "memory_size":3000,
+            "batch_size":32,
+            "e_greedy_increment":0.001,
+            "output_graph":false,
+            "layers":2,
+            "hiddens":30,
+            "prioritized":false,
+            "double_q":false,
+            "dueling":true
+    },
+    "environment": {
+        "name":"Pendulum-v0",
+        "reward_scale": 0.1
+    }
+}
+
+
