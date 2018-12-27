@@ -1,0 +1,17 @@
+{  "DDPG":{
+        "layers":1, 
+        "hiddens":300,
+        "discrete":false,
+        "LR_A":0.0005,
+        "LR_C":0.0005,
+        "GAMMA":0.999,
+        "TAU":0.001,
+        "MEMORY_CAPACITY":200000,
+        "BATCH_SIZE":32,
+        "replacement":{"name":"hard","rep_iter_a":1700, "rep_iter_c":1500},
+        "LR_decay":{"decay_steps":10000,"decay_rate":0.97}
+    },
+    "environment": {
+        "name":"BipedalWalker-v2"
+    }
+}

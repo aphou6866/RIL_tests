@@ -1,0 +1,15 @@
+{  "DDPG":{
+        "layers":1, 
+        "hiddens":20,
+        "discrete":true,
+        "LR_A":0.001,
+        "LR_C":0.002,
+        "GAMMA":0.9,
+        "TAU":0.01,
+        "MEMORY_CAPACITY":10000,
+        "BATCH_SIZE":32
+    },
+    "environment": {
+        "name":"CartPole-v0"
+    }
+}

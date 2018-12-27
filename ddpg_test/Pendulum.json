@@ -1,0 +1,17 @@
+{  "DDPG":{
+        "layers":2, 
+        "hiddens":30,
+        "discrete":false,
+        "LR_A":0.001,
+        "LR_C":0.002,
+        "GAMMA":0.99,
+        "TAU":0.01,
+        "MEMORY_CAPACITY":10000,
+        "BATCH_SIZE":32,
+        "replacement":{"name":"soft","tau":0.01},
+        "LR_decay":{"decay_steps":10000,"decay_rate":0.97}
+    },
+    "environment": {
+        "name":"Pendulum-v0"
+    }
+}
