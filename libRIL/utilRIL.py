@@ -11,6 +11,8 @@ import gym, json
 import numpy as np
 import tensorflow as tf
 from advance_DQN import DQN
+from DDPG import ddpg_method
+from numpy import linalg as LA
 
 def initial_deepq_network( fn, build_network):
     with open(fn) as f:
@@ -77,53 +79,125 @@ def train_deepq_network( env, model,  model_status, env_action, model_reward, ma
 
     model.save(modelName)
     
-#def train_deepq_network( env, brain, reward_scale, episodes, model, show):
     
-    #continuous=False
-    #print(type(env.action_space), env.action_space, len(env.action_space.shape))
+def initial_ddpg_method( fn, build_network):
+    with open(fn) as f:
+        jcfg= json.load(f)
+    print( json.dumps(jcfg, sort_keys=True, indent=4, separators=(',',':')))
+    #print(type(jcfg['DQN']['double_q']))
+    env = gym.make(jcfg['environment']['name'])
+    env = env.unwrapped
+    env.seed(1)
+    s_dim = env.observation_space.shape[0]
+    if jcfg['DDPG']['discrete']:
+        a_dim = env.action_space.n
+        a_bound=0
+    else:
+        a_dim = env.action_space.shape[0]
+        a_bound = env.action_space.high
+    print("s_dim, a_dim, a_bound", s_dim, a_dim, a_bound)
+    return jcfg, env, ddpg_method(
+                    build_network, 
+                    layers= jcfg['DDPG']['layers'], 
+                    hiddens= jcfg['DDPG']['hiddens'],
+                    action_dim= a_dim, 
+                    state_dim= s_dim, 
+                    action_bound= a_bound,
+                    REPLACEMENT= jcfg['DDPG']['replacement'],
+                    LR_decay= jcfg['DDPG']['LR_decay'],
+                    discrete= jcfg['DDPG']['discrete'],
+                    LR_A= jcfg['DDPG']['LR_A'],    # learning rate for actor
+                    LR_C= jcfg['DDPG']['LR_C'],    # learning rate for critic
+                    GAMMA= jcfg['DDPG']['GAMMA'],     # reward discount
+                    TAU= jcfg['DDPG']['TAU'],      # soft replacement
+                    MEMORY_CAPACITY= jcfg['DDPG']['MEMORY_CAPACITY'],
+                    BATCH_SIZE= jcfg['DDPG']['BATCH_SIZE']
+        )
     
-    #if len(env.action_space.shape)==1:
-        #continuous= True
-        #A_BOUND = [env.action_space.low, env.action_space.high]
-        #A_LENGTH= env.action_space.high- env.action_space.low
-        #print( A_BOUND[0], A_BOUND[1], A_LENGTH)
+
+def ddpg_method_train( env, model,  model_status, env_action, model_reward, check_steps, max_steps, episodes, modelName, show):
     
-    #for i_episode in range(episodes):
-        #observation = env.reset()
-        #total_steps =0
-        #sumRwd=0.
-        #mntRwd=0.
+    print(episodes, max_steps ,show)
+    RENDER=False
+    #maxReward= model.load( modelName)
+    sampling= True
+    var=3.
+    END_POINT = (200 - 10) * (14/30)
+    running_r= None
+    maxReward= model.load( modelName)
+    for i_episode in range(episodes):
+        # s = (hull angle speed, angular velocity, horizontal speed, vertical speed, position of joints and joints angular speed, legs contact with ground, and 10 lidar rangefinder measurements.)
+        s = env.reset()
+        ep_r = 0
         #while True:
-            #if show:
-                #env.render()
+        for j in range(max_steps):
+            if RENDER:
+                env.render()
+            if RENDER:
+                env.render()
+            s = model_status(s)
+            a = model.actor.choose_action(s)
+            s_, r, done, _ = env.step( env_action( a, running_r))    # r = total 300+ points up to the far end. If the robot falls, it gets -100.
+            s_= model_status(s_)
+            r = model_reward(r)
+            ep_r += r
+
+            if 0 <show:
+                transition = np.hstack((s, a, [r], s_))
+                max_p = np.max( model.M.tree.tree[-model.M.tree.capacity:])
+                model.M.store(max_p, transition)
+                model.learn()
                 
-            #action = brain.choose_action( observation)
-            #if continuous:
-                #t= action/ brain.n_actions
-                #f_action= A_BOUND[0] + t* A_LENGTH
-            #else:
-                #f_action= action
-            ##f_action = (action-( brain.n_actions-1)/2)/(( brain.n_actions-1)/4)
-            ##print(action, observation)
-            #observation_, reward, done, info = env.step(f_action)
-            #sumRwd += reward
-            #if 3< total_steps:
-                #avgRwd= sumRwd/ total_steps
-            #else:
-                #avgRwd= 0.0
-            #reward *= reward_scale
-            ##print( action, observation, reward, R_BOUND)
-            #if total_steps%1000==0:
-                #print( total_steps, avgRwd)
-            #brain.store_transition(observation, action, reward, observation_)
+            if done:
+                if running_r== None:
+                    running_r = ep_r
+                else:
+                    running_r = 0.95*running_r + 0.05*ep_r
+                if running_r > show: RENDER = True
+                #else: RENDER = False
+                
+                if 0<show and maxReward< running_r:
+                    maxReward= running_r
+                    model.save( modelName, maxReward)
+
+                done = '| Achieve ' if env.unwrapped.hull.position[0] >= END_POINT else '| -----'
+                print('Episode:', i_episode, "steps:", j,
+                    done,
+                    '| Running_r: %.2f' % int(running_r),
+                    '| Epi_r: %.2f' % ep_r,
+                    '| Exploration: %.3f' % var,
+                    '| Pos: %.i' % int(env.unwrapped.hull.position[0]),
+                    
+                    )
+                break
             
-            #if total_steps > brain.memory_size:   # learning
-                #brain.learn()
-            #if done:
-                #print("Game done")
+            s = s_
+            if 0< show:
+                model.sess.run( model.INCREASE_GS)
+            if 0<show and running_r!= None and check_steps(max_steps, running_r) < j:
+                running_r = 0.95*running_r + 0.05*ep_r
+                done = '| Break '
+                print('Episode:', i_episode, "steps:", j,
+                    done,
+                    '| Running_r: %.2f' % int(running_r),
+                    '| Epi_r: %.2f' % ep_r,
+                    '| Exploration: %.3f' % var,
+                    '| Pos: %.i' % int(env.unwrapped.hull.position[0]),
+                    
+                    )
+                break;
+            
+            #if done== True or j == max_steps-1:
+                #print('Episode:', i, ' Reward: %i' % int(ep_reward), "pointer:%d"%model.M.pointer, "Distance:%f"%dist)
+                #if model.MEMORY_CAPACITY//20 < model.M.pointer:
+                    
+                    ##if maxReward < ep_reward:
+                        ##maxReward= ep_reward
+                        ##model.save(modelName, maxReward)
+                        
+                    #if  show < ep_reward:
+                        #RENDER = True
+                    
                 #break
-            
-            #observation = observation_
-            #total_steps += 1
-    
-    
+        
+    #model.save(modelName, maxReward)

@@ -38,17 +38,6 @@ tf.summary.FileWriter('logs',g).close()
             
     #return out
 
-def build_dqn_dense( X, c_names, n_actions, layers, hiddens, w_initializer, b_initializer, dueling, trainable):
-    print('----------->',layers, hiddens, dueling)
-    l1= dense( X, num_layers=layers, num_hidden=hiddens, activation= tf.nn.relu, c_names= c_names)
-    if dueling:
-        V= fc( l1, 'Value', nh=1, init_scale=np.sqrt(2), c_names= c_names)
-        A= fc( l1, 'Advantage', nh= n_actions, init_scale=np.sqrt(2), c_names= c_names)
-        with tf.variable_scope('Q'):
-            out = V + (A - tf.reduce_mean(A, axis=1, keep_dims=True))     # Q = V(s) + A(s,a)
-    else:
-        out= fc( l1, 'Q', nh=n_actions, init_scale=np.sqrt(2), c_names= c_names)
-    return out
 
 
 def build_dqn_example(s, c_names, n_actions, layers, hiddens, w_initializer, b_initializer, dueling, trainable):
@@ -79,4 +68,19 @@ def build_dqn_example(s, c_names, n_actions, layers, hiddens, w_initializer, b_i
             out = tf.matmul(l1, w2) + b2
             
     return out
+
+
+
+def build_dqn_dense( X, c_names, n_actions, layers, hiddens, w_initializer, b_initializer, dueling, trainable):
+    print('layers, hiddens, dueling <==>',layers, hiddens, dueling)
+    l1= dense( X, num_layers=layers, num_hidden=hiddens, activation= tf.nn.relu, c_names= c_names)
+    if dueling:
+        V= fc( l1, 'Value', nh=1, init_scale=np.sqrt(2), c_names= c_names)
+        A= fc( l1, 'Advantage', nh= n_actions, init_scale=np.sqrt(2), c_names= c_names)
+        with tf.variable_scope('Q'):
+            out = V + (A - tf.reduce_mean(A, axis=1, keep_dims=True))     # Q = V(s) + A(s,a)
+    else:
+        out= fc( l1, 'Q', nh=n_actions, init_scale=np.sqrt(2), c_names= c_names)
+    return out
+
 
